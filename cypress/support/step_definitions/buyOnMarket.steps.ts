@@ -1,5 +1,6 @@
 import { When, Then, And } from 'cypress-cucumber-preprocessor/steps';
 import OrderHistoryHelper from '../helpers/orderHistoryHelper';
+import OpenPositionsHelper from '../helpers/openPositionsHelper';
 
 /**
  * Selects the Market option for trading.
@@ -15,7 +16,7 @@ When('I choose Market option', () => {
  *
  * @param {string} amount - The amount to be provided.
  */
-And('I buy {string} BTC', (amount: string) => {
+When('I buy {string} BTC', (amount: string) => {
     cy.get('input[name="unitAmount"]')
       .should('be.visible')
       .type(amount);
@@ -23,16 +24,30 @@ And('I buy {string} BTC', (amount: string) => {
     cy.contains('button', 'Buy/Long').click();
 
     OrderHistoryHelper.addOrder("Market", "Buy", Number(amount));
+    OpenPositionsHelper.addOrUpdatePosition("BTCUSDT", Number(amount));
+    cy.log(OpenPositionsHelper.getPositionAsJson());
 
     // timeout for complete the order - .should('be.visible') will not work
     cy.wait(2000);
 });
 
 /**
- * Verifies that position exists,
- * and closes it at the market price.
+ * Verifies that the open BTCUSDT position in the Position Tab match the expected position.
  */
-Then('I see the order in position tab and close it at market price', () => {
+Then('I see the BTCUSDT position in the Position Tab', () => {
+    cy.get('div.list-item-container') 
+        .children('div.flex.items-center.w-full')
+        .as('positions');
+
+    cy.get('@positions').first()
+        .should('contain.text', OpenPositionsHelper.positions[0].symbol)
+        .should('contain.text', `${OpenPositionsHelper.positions[0].amount} BTC`);
+});
+
+/**
+ * Close the position at the market price.
+ */
+Then('I close the position at market price', () => {
     cy.get('div.bn-tooltips-ele')
       .contains('button', 'Market')
       .should('be.visible')
@@ -49,7 +64,7 @@ And('I verify orders in the Order History Tab', () => {
 
     cy.get('div.css-1nb8i00')
         .children('div.w-full')
-        .as('orders')
+        .as('orders');
 
     cy.get('@orders').each((orderElement, index) => {
         if (index < OrderHistoryHelper.orders.length) {
