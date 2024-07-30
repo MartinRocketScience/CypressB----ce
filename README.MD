@@ -1,3 +1,5 @@
+# This is a task completed for a recruitment process at one of the companies; therefore, due to the context, it will soon be removed and is not intended for presentation purposes.
+
 # CypressB--------ce
 
 ## Description
